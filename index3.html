@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accident Reporting System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+  <div class="container mt-5">
+    <h2 class="text-center">Accident Reporting System</h2>
+
+    <!-- Add/Edit Accident Report Form -->
+    <form id="accidentForm" enctype="multipart/form-data">
+      <input type="hidden" id="reportId" name="reportId">
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea id="description" name="description" class="form-control" required></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label for="date" class="form-label">Date</label>
+        <input type="date" id="date" name="date" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="location" class="form-label">Location</label>
+        <input type="text" id="location" name="location" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="severity" class="form-label">Severity</label>
+        <select id="severity" name="severity" class="form-select" required>
+          <option value="Minor">Minor</option>
+          <option value="Moderate">Moderate</option>
+          <option value="Severe">Severe</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="image" class="form-label">Image</label>
+        <input type="file" id="image" name="image" class="form-control">
+      </div>
+
+      <button type="submit" class="btn btn-primary">Save Report</button>
+    </form>
+
+    <!-- Accident Reports List -->
+    <h3 class="mt-5">Accident Reports</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Description</th>
+          <th>Date</th>
+          <th>Location</th>
+          <th>Severity</th>
+          <th>Image</th>
+          <th>Created At</th>
+          <th>Updated At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="accidentReportsList"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Fetch and display accident reports
+    function fetchAccidentReports() {
+      $.ajax({
+        url: 'get_accidents.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function (response) {
+          let html = '';
+          response.forEach(report => {
+            html += `
+              <tr>
+                <td>${report.id}</td>
+                <td>${report.description}</td>
+                <td>${report.date}</td>
+                <td>${report.location}</td>
+                <td>${report.severity}</td>
+                <td>
+                  ${report.image ? `<img src="uploads/${report.image}" alt="Accident Image" class="img-thumbnail" style="max-width: 100px; height: auto;">` : 'No Image'}
+                </td>
+                <td>${report.created_at}</td>
+                <td>${report.updated_at}</td>
+                <td>
+                  <button class="btn btn-warning btn-sm" onclick="editAccident(${report.id})">Edit</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteAccident(${report.id})">Delete</button>
+                </td>
+              </tr>
+            `;
+          });
+          $('#accidentReportsList').html(html);
+        }
+      });
+    }
+
+    // Add or update accident report
+    $('#accidentForm').submit(function (event) {
+      event.preventDefault();
+      let formData = new FormData(this);
+
+      // Set AJAX URL based on whether it's an update or create operation
+      const url = $('#reportId').val() ? 'update_accident.php' : 'create_accident.php';
+
+      $.ajax({
+        url: url,
+        method: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        dataType: 'json',
+        success: function (response) {
+          alert(response.message);
+          fetchAccidentReports();
+          $('#accidentForm')[0].reset();
+          $('#reportId').val('');
+        }
+      });
+    });
+
+    // Edit accident report
+    function editAccident(id) {
+      $.ajax({
+        url: 'get_single_accident.php',
+        method: 'GET',
+        data: { id: id },
+        dataType: 'json',
+        success: function (report) {
+          $('#reportId').val(report.id);
+          $('#description').val(report.description);
+          $('#date').val(report.date);
+          $('#location').val(report.location);
+          $('#severity').val(report.severity);
+        }
+      });
+    }
+
+    // Delete accident report
+    function deleteAccident(id) {
+      if (confirm("Are you sure you want to delete this report?")) {
+        $.ajax({
+          url: 'delete_accident.php',
+          method: 'POST',
+          data: { id: id },
+          dataType: 'json',
+          success: function (response) {
+            alert(response.message);
+            fetchAccidentReports();
+          }
+        });
+      }
+    }
+
+    // Initialize on page load
+    $(document).ready(function () {
+      fetchAccidentReports();
+    });
+  </script>
+</body>
+
+</html>

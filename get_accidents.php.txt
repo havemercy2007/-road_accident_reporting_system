@@ -1,0 +1,10 @@
+<?php
+require_once 'db_connect.php';
+
+$stmt = $conn->prepare("SELECT * FROM accident_reports");
+$stmt->execute();
+
+$accidents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo json_encode($accidents);
+?>
